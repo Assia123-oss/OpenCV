@@ -2,13 +2,13 @@ import cv2
 import numpy as np
 import subprocess
 import os
+import platform
 
 # Paths to required files
 javase_jar = "javase-3.5.0.jar"
 core_jar = "core-3.5.0.jar"
 jcommander_jar = "jcommander-1.82.jar"
-
-barcode_image = "pdf417_code.png"
+barcode_image = "id-gabriel.png"
 
 # Validate required files
 for file in [javase_jar, core_jar, jcommander_jar, barcode_image]:
@@ -16,20 +16,24 @@ for file in [javase_jar, core_jar, jcommander_jar, barcode_image]:
         print(f"Error: {file} not found!")
         exit(1)
 
-# Docker command to detect the barcode and get its position
-docker_command = [
-    "docker", "run", "--rm",
-    "-v", f"{os.getcwd()}:/app",
-    "openjdk:17",
-    "java", "-cp",
-    f"/app/{javase_jar}:/app/{core_jar}:/app/{jcommander_jar}",
+# Set classpath separator based on OS
+classpath_separator = ";" if platform.system() == "Windows" else ":"
+
+# Java command
+java_command = [
+    "java",
+    "-cp",
+    f"{javase_jar}{classpath_separator}{core_jar}{classpath_separator}{jcommander_jar}",
     "com.google.zxing.client.j2se.CommandLineRunner",
-    f"/app/{barcode_image}"
+    barcode_image  # No file:// needed
 ]
 
+# Debugging: Check the actual command
+print("Running command:", " ".join(java_command))
+
 try:
-    # Run the Docker command to get the decoding and position
-    result = subprocess.run(docker_command, capture_output=True, text=True, check=True)
+    # Run the Java command to decode the barcode
+    result = subprocess.run(java_command, capture_output=True, text=True, check=True)
     output = result.stdout.strip()
     print("Decoded Output:")
     print(output)
@@ -67,7 +71,7 @@ if len(points) >= 4:
     # Display the image
     cv2.imshow("Detected Barcode", image)
     print("Press any key to close the window.")
-    cv2.waitKey(1)
+    cv2.waitKey(0)
     cv2.destroyAllWindows()
 else:
     print("No bounding box points detected.")
