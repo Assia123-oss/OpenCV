@@ -1,37 +1,34 @@
+from pyzbar.pyzbar import decode
 import cv2
-import pyzxing
-import tempfile
-import os
+import numpy as np
 
-# Initialize the ZXing barcode reader
-reader = pyzxing.BarCodeReader()
+# Read the image
+image = cv2.imread("/home/Downloads/OpenCV-Masterclass-main (2)/Decoding/image042.jpg")
 
-# Load the image using OpenCV
-image = cv2.imread('qrcode.jpg')
+# Decode the barcode
+barcodes = decode(image)
+for barcode in barcodes:
+    data = barcode.data.decode("utf-8")
+    print(f"Barcode Data: {data}")
+   
+   
+    points = barcode.polygon
+    points = [(point.x, point.y) for point in points]
+    cv2.polylines(image, [np.array(points, dtype=np.int32)], True, (0, 255, 0), 2)
 
-# Save the image to a temporary file
-temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-cv2.imwrite(temp_file.name, image)
+    # Annotate the decoded data beside the bounding box
+    x, y = points[0]  # Take the first point of the bounding box
+    cv2.putText(image, data, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)  # Green text
 
-# Decode the QR code from the temporary file
-result = reader.decode(temp_file.name)
+# Display the image with the barcode highlighted and annotated
+cv2.imshow("Barcode with Annotation", image)
 
-# Ensure the file is closed before deleting
-temp_file.close()
+# Wait for a key press
+key = cv2.waitKey(0)
 
-# Clean up the temporary file
-try:
-    os.remove(temp_file.name)
-except PermissionError:
-    print(f"Could not delete temporary file {temp_file.name}. It may still be in use.")
-    # Handle the error or wait for the file to be released if necessary
+# Save the annotated image when a key is pressed
+output_file = "decoded_barcode.png"
+cv2.imwrite(output_file, image)
+print(f"Annotated image saved as {output_file}")
 
-# Print the full result to understand its structure
-print("Decoded Data:", result)
-
-# Access and print the data based on the correct key (adjust depending on result structure)
-if result:
-    for item in result:
-        print("Decoded Data:", item)  # or item.get('raw') if that key exists
-else:
-    print("No QR code found.")
+cv2.destroyAllWindows()

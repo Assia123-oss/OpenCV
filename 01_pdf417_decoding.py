@@ -8,10 +8,10 @@ import platform
 javase_jar = "javase-3.5.0.jar"
 core_jar = "core-3.5.0.jar"
 jcommander_jar = "jcommander-1.82.jar"
-barcode_image = "id-gabriel.png"
+pdf417_image = "image01.png"
 
 # Validate required files
-for file in [javase_jar, core_jar, jcommander_jar, barcode_image]:
+for file in [javase_jar, core_jar, jcommander_jar, pdf417_image]:
     if not os.path.exists(file):
         print(f"Error: {file} not found!")
         exit(1)
@@ -25,14 +25,14 @@ java_command = [
     "-cp",
     f"{javase_jar}{classpath_separator}{core_jar}{classpath_separator}{jcommander_jar}",
     "com.google.zxing.client.j2se.CommandLineRunner",
-    barcode_image  # No file:// needed
+    pdf417_image  # No file:// needed
 ]
 
 # Debugging: Check the actual command
 print("Running command:", " ".join(java_command))
 
 try:
-    # Run the Java command to decode the barcode
+    # Run the Java command to decode the pdf417
     result = subprocess.run(java_command, capture_output=True, text=True, check=True)
     output = result.stdout.strip()
     print("Decoded Output:")
@@ -42,7 +42,7 @@ except subprocess.CalledProcessError as e:
     print(e.stderr)
     exit(1)
 
-# Parse the ZXing output for barcode position
+# Parse the ZXing output for pdf417 position
 points = []
 for line in output.splitlines():
     if line.startswith("  Point"):
@@ -52,7 +52,7 @@ for line in output.splitlines():
 # If points are found, draw a bounding polygon
 if len(points) >= 4:
     # Load the image with OpenCV
-    image = cv2.imread(barcode_image)
+    image = cv2.imread(pdf417_image)
     if image is None:
         print("Error: Unable to read the image!")
         exit(1)
@@ -64,12 +64,12 @@ if len(points) >= 4:
     cv2.polylines(image, [points_array], isClosed=True, color=(0, 255, 0), thickness=2)
 
     # Save and display the annotated image
-    annotated_image_path = "annotated_barcode.png"
+    annotated_image_path = "annotated_pdf417.png"
     cv2.imwrite(annotated_image_path, image)
     print(f"Annotated image saved as {annotated_image_path}")
 
     # Display the image
-    cv2.imshow("Detected Barcode", image)
+    cv2.imshow("Detected pdf417", image)
     print("Press any key to close the window.")
     cv2.waitKey(0)
     cv2.destroyAllWindows()
